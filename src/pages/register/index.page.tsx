@@ -1,23 +1,27 @@
 import { Heading, MultiStep, Text, TextInput, Button } from '@ignite-ui/react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+
+import { api } from '../../lib/axios'
+import { AxiosError } from 'axios'
+
 import { Container, Header, Form, FormError } from './styles'
 import { ArrowRight } from 'phosphor-react'
-import { useEffect } from 'react'
 
 const registerFormSchema = z.object({
   username: z
     .string()
-    .min(3, { message: 'O usuário precisa ter pelo menos 3 letras. ' })
+    .min(3, { message: 'O usuário precisa ter pelo menos 3 letras.' })
     .regex(/^([a-z\\-]+)$/i, {
       message: 'O usuário pode ter apenas letras e hifens.',
     })
     .transform((username) => username.toLowerCase()),
   name: z
     .string()
-    .min(3, { message: 'O nome precisa ter pelo menos 3 letras. ' }),
+    .min(3, { message: 'O nome precisa ter pelo menos 3 letras.' }),
 })
 
 type RegisterFormData = z.infer<typeof registerFormSchema>
@@ -41,7 +45,19 @@ export default function Register() {
   }, [router.query?.username, setValue])
 
   async function handleRegister(data: RegisterFormData) {
-    console.log(data)
+    try {
+      await api.post('/users', {
+        name: data.name,
+        username: data.username,
+      })
+    } catch (err) {
+      if (err instanceof AxiosError && err?.response?.data?.message) {
+        alert(err.response.data.message)
+        return
+      }
+
+      console.error(err)
+    }
   }
 
   return (
